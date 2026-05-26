@@ -2,12 +2,11 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>7系条码助手-彩边大间隔版</title>
+    <title>7系条码助手-彩边大字版</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <style>
         :root { --primary: #28a745; --secondary: #17a2b8; }
-        /* 增加底部 padding 到 150px，保证最后一个条码在最底下也能轻松扫到 */
         body { font-family: -apple-system, sans-serif; background: #f0f2f5; padding: 15px 15px 150px 15px; display: flex; flex-direction: column; align-items: center; margin: 0; }
         
         .tab-container { display: flex; width: 100%; max-width: 400px; margin-bottom: 15px; background: #e9ecef; border-radius: 10px; overflow: hidden; }
@@ -25,18 +24,20 @@
         button.btn-weight { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 5px; }
         button.btn-price { width: 100%; padding: 14px; background: var(--secondary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 5px; }
         
-        /* 列表容器 */
         .history-list { width: 100%; max-width: 400px; margin-top: 30px; }
         
-        /* 【核心修改】卡片间距拉大到 50px，边框加粗至 3px，基础边框为透明（由动态颜色接管） */
-        .item { background: white; padding: 20px; border-radius: 14px; margin-bottom: 50px; position: relative; box-shadow: 0 6px 16px rgba(0,0,0,0.06); text-align: center; border: 3px solid transparent; }
+        /* 卡片基础样式：保持 50px 超大间隔与 3px 粗边框 */
+        .item { background: white; padding: 22px; border-radius: 14px; margin-bottom: 50px; position: relative; box-shadow: 0 6px 16px rgba(0,0,0,0.06); text-align: center; border: 3px solid transparent; }
         
-        .item-info { text-align: left; border-bottom: 1px dashed #eee; margin-bottom: 12px; padding-bottom: 10px; padding-right: 30px; }
-        .item-note { font-weight: bold; color: #333; font-size: 16px; }
-        .item-sub { font-size: 13px; color: #888; margin-top: 4px; }
-        .item-code { font-family: monospace; color: #000; font-size: 16px; font-weight: bold; margin-top: 4px; display: block; }
-        .btn-del { position: absolute; right: 10px; top: 15px; color: #dc3545; border: none; background: #ffe1e1; border-radius: 50%; width: 28px; height: 28px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        canvas { width: 100% !important; height: auto; margin-top: 8px; }
+        /* === 【核心修改】文字信息全部改为居中，并放大字号 === */
+        .item-info { text-align: center; border-bottom: 1px dashed #eee; margin-bottom: 15px; padding-bottom: 12px; }
+        .item-note { font-weight: bold; color: #111; font-size: 18px; } /* 备注放大到 18px */
+        .item-sub { font-size: 15px; color: #666; margin-top: 6px; font-weight: 500; } /* 重量/价格信息放大 */
+        .item-code { font-family: monospace; color: #000; font-size: 18px; font-weight: bold; margin-top: 10px; display: block; letter-spacing: 1px; } /* 条码数字放大并增加字间距 */
+        /* === 修改结束 === */
+
+        .btn-del { position: absolute; right: 12px; top: 15px; color: #dc3545; border: none; background: #ffe1e1; border-radius: 50%; width: 28px; height: 28px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        canvas { width: 100% !important; height: auto; margin-top: 12px; }
         
         #section-weight { display: flex; flex-direction: column; align-items: center; width: 100%; }
         #section-price { display: none; flex-direction: column; align-items: center; width: 100%; }
@@ -51,7 +52,7 @@
 
     <div id="section-weight">
         <div class="card">
-            <h2 style="margin:0 0 15px 0; color:var(--primary); font-size:18px;">录入重量生成条码</h2>
+            <h2 style="margin:0 0 15px 0; color:var(--primary); font-size:18px; text-align: center;">录入重量生成条码</h2>
             <div class="input-group">
                 <label>货号</label>
                 <input type="tel" id="w-sku" placeholder="如: 16">
@@ -71,7 +72,7 @@
 
     <div id="section-price">
         <div class="card">
-            <h2 style="margin:0 0 15px 0; color:var(--secondary); font-size:18px;">输入价格反推重量</h2>
+            <h2 style="margin:0 0 15px 0; color:var(--secondary); font-size:18px; text-align: center;">输入价格反推重量</h2>
             <div class="input-group">
                 <label>货号 (自动填单价)</label>
                 <input type="tel" id="p-sku" placeholder="输入货号">
@@ -96,10 +97,8 @@
     </div>
 
     <script>
-        // 定义高亮好看的彩边颜色库
         const borderColors = ['#e91e63', '#00bcd4', '#4caf50', '#ff9800', '#9c27b0', '#3f51b5', '#ff5722', '#009688'];
 
-        // 随机获取颜色的函数
         function getRandomColor() {
             return borderColors[Math.floor(Math.random() * borderColors.length)];
         }
@@ -152,7 +151,6 @@
             let code = calculateEAN13("7" + s.padStart(6, '0') + Math.round(w*1000).toString().padStart(5, '0'));
             
             let h = JSON.parse(localStorage.getItem('l_w') || '[]');
-            // 生成时随机分配一个描边颜色并保存
             h.unshift({id: Date.now(), code: code, note: n, sub: `重量: ${w}kg`, color: getRandomColor() });
             localStorage.setItem('l_w', JSON.stringify(h));
             document.getElementById('w-weight').value = "";
@@ -162,7 +160,6 @@
         function renderWeightList() {
             let h = JSON.parse(localStorage.getItem('l_w') || '[]');
             let l = document.getElementById('list-weight');
-            // 将绑定的 color 赋值给卡片的 style="border-color: ..."
             l.innerHTML = h.map(i => `<div class="item" style="border-color: ${i.color || '#ddd'}"><button class="btn-del" onclick="del('l_w',${i.id},'w')">×</button><div class="item-info"><div class="item-note">${i.note}</div><div class="item-sub">${i.sub}</div><span class="item-code">${i.code}</span></div><canvas id="cw-${i.id}"></canvas></div>`).join('');
             h.forEach(i => JsBarcode(`#cw-${i.id}`, i.code, {format:"EAN13", width:2.5, height:70, displayValue:false}));
         }
@@ -185,7 +182,6 @@
             localStorage.setItem('sku_price_map', JSON.stringify(map));
 
             let h = JSON.parse(localStorage.getItem('l_p') || '[]');
-            // 生成时随机分配一个描边颜色并保存
             h.unshift({id: Date.now(), code: code, note: n, sub: `总价: ${t}元 (约${(grams/1000).toFixed(3)}kg)`, color: getRandomColor()});
             localStorage.setItem('l_p', JSON.stringify(h));
             document.getElementById('p-total').value = "";
@@ -195,7 +191,6 @@
         function renderPriceList() {
             let h = JSON.parse(localStorage.getItem('l_p') || '[]');
             let l = document.getElementById('list-price');
-            // 将绑定的 color 赋值给卡片的 style="border-color: ..."
             l.innerHTML = h.map(i => `<div class="item" style="border-color: ${i.color || '#ddd'}"><button class="btn-del" onclick="del('l_p',${i.id},'p')">×</button><div class="item-info"><div class="item-note">${i.note}</div><div class="item-sub">${i.sub}</div><span class="item-code">${i.code}</span></div><canvas id="cp-${i.id}"></canvas></div>`).join('');
             h.forEach(i => JsBarcode(`#cp-${i.id}`, i.code, {format:"EAN13", width:2.5, height:70, displayValue:false}));
         }
