@@ -2,13 +2,13 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>7系条码助手-记忆增强版</title>
+    <title>7系条码助手-彩边大间隔版</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <style>
         :root { --primary: #28a745; --secondary: #17a2b8; }
-        /* 增加底部 padding，防止最后一个条码贴底 */
-        body { font-family: -apple-system, sans-serif; background: #f0f2f5; padding: 15px 15px 100px 15px; display: flex; flex-direction: column; align-items: center; margin: 0; }
+        /* 增加底部 padding 到 150px，保证最后一个条码在最底下也能轻松扫到 */
+        body { font-family: -apple-system, sans-serif; background: #f0f2f5; padding: 15px 15px 150px 15px; display: flex; flex-direction: column; align-items: center; margin: 0; }
         
         .tab-container { display: flex; width: 100%; max-width: 400px; margin-bottom: 15px; background: #e9ecef; border-radius: 10px; overflow: hidden; }
         .tab-btn { flex: 1; padding: 12px; border: none; font-size: 15px; font-weight: bold; cursor: pointer; color: #555; background: transparent; transition: 0.3s; }
@@ -25,10 +25,11 @@
         button.btn-weight { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 5px; }
         button.btn-price { width: 100%; padding: 14px; background: var(--secondary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 5px; }
         
-        .history-list { width: 100%; max-width: 400px; margin-top: 25px; }
+        /* 列表容器 */
+        .history-list { width: 100%; max-width: 400px; margin-top: 30px; }
         
-        /* 【核心修改】显著拉开条码卡片之间的距离 */
-        .item { background: white; padding: 20px; border-radius: 12px; margin-bottom: 30px; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.08); text-align: center; }
+        /* 【核心修改】卡片间距拉大到 50px，边框加粗至 3px，基础边框为透明（由动态颜色接管） */
+        .item { background: white; padding: 20px; border-radius: 14px; margin-bottom: 50px; position: relative; box-shadow: 0 6px 16px rgba(0,0,0,0.06); text-align: center; border: 3px solid transparent; }
         
         .item-info { text-align: left; border-bottom: 1px dashed #eee; margin-bottom: 12px; padding-bottom: 10px; padding-right: 30px; }
         .item-note { font-weight: bold; color: #333; font-size: 16px; }
@@ -95,6 +96,14 @@
     </div>
 
     <script>
+        // 定义高亮好看的彩边颜色库
+        const borderColors = ['#e91e63', '#00bcd4', '#4caf50', '#ff9800', '#9c27b0', '#3f51b5', '#ff5722', '#009688'];
+
+        // 随机获取颜色的函数
+        function getRandomColor() {
+            return borderColors[Math.floor(Math.random() * borderColors.length)];
+        }
+
         window.onload = function() {
             renderWeightList();
             renderPriceList();
@@ -141,8 +150,10 @@
             let n = document.getElementById('w-note').value || "未命名";
             if (!s || !w) return alert("请输入货号和重量");
             let code = calculateEAN13("7" + s.padStart(6, '0') + Math.round(w*1000).toString().padStart(5, '0'));
+            
             let h = JSON.parse(localStorage.getItem('l_w') || '[]');
-            h.unshift({id: Date.now(), code: code, note: n, sub: `重量: ${w}kg` });
+            // 生成时随机分配一个描边颜色并保存
+            h.unshift({id: Date.now(), code: code, note: n, sub: `重量: ${w}kg`, color: getRandomColor() });
             localStorage.setItem('l_w', JSON.stringify(h));
             document.getElementById('w-weight').value = "";
             renderWeightList();
@@ -151,7 +162,8 @@
         function renderWeightList() {
             let h = JSON.parse(localStorage.getItem('l_w') || '[]');
             let l = document.getElementById('list-weight');
-            l.innerHTML = h.map(i => `<div class="item"><button class="btn-del" onclick="del('l_w',${i.id},'w')">×</button><div class="item-info"><div class="item-note">${i.note}</div><div class="item-sub">${i.sub}</div><span class="item-code">${i.code}</span></div><canvas id="cw-${i.id}"></canvas></div>`).join('');
+            // 将绑定的 color 赋值给卡片的 style="border-color: ..."
+            l.innerHTML = h.map(i => `<div class="item" style="border-color: ${i.color || '#ddd'}"><button class="btn-del" onclick="del('l_w',${i.id},'w')">×</button><div class="item-info"><div class="item-note">${i.note}</div><div class="item-sub">${i.sub}</div><span class="item-code">${i.code}</span></div><canvas id="cw-${i.id}"></canvas></div>`).join('');
             h.forEach(i => JsBarcode(`#cw-${i.id}`, i.code, {format:"EAN13", width:2.5, height:70, displayValue:false}));
         }
 
@@ -173,7 +185,8 @@
             localStorage.setItem('sku_price_map', JSON.stringify(map));
 
             let h = JSON.parse(localStorage.getItem('l_p') || '[]');
-            h.unshift({id: Date.now(), code: code, note: n, sub: `总价: ${t}元 (约${(grams/1000).toFixed(3)}kg)`});
+            // 生成时随机分配一个描边颜色并保存
+            h.unshift({id: Date.now(), code: code, note: n, sub: `总价: ${t}元 (约${(grams/1000).toFixed(3)}kg)`, color: getRandomColor()});
             localStorage.setItem('l_p', JSON.stringify(h));
             document.getElementById('p-total').value = "";
             renderPriceList();
@@ -182,7 +195,8 @@
         function renderPriceList() {
             let h = JSON.parse(localStorage.getItem('l_p') || '[]');
             let l = document.getElementById('list-price');
-            l.innerHTML = h.map(i => `<div class="item"><button class="btn-del" onclick="del('l_p',${i.id},'p')">×</button><div class="item-info"><div class="item-note">${i.note}</div><div class="item-sub">${i.sub}</div><span class="item-code">${i.code}</span></div><canvas id="cp-${i.id}"></canvas></div>`).join('');
+            // 将绑定的 color 赋值给卡片的 style="border-color: ..."
+            l.innerHTML = h.map(i => `<div class="item" style="border-color: ${i.color || '#ddd'}"><button class="btn-del" onclick="del('l_p',${i.id},'p')">×</button><div class="item-info"><div class="item-note">${i.note}</div><div class="item-sub">${i.sub}</div><span class="item-code">${i.code}</span></div><canvas id="cp-${i.id}"></canvas></div>`).join('');
             h.forEach(i => JsBarcode(`#cp-${i.id}`, i.code, {format:"EAN13", width:2.5, height:70, displayValue:false}));
         }
 
